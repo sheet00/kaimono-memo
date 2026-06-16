@@ -1,40 +1,64 @@
 # kaimono-memo
 
-日常の買い物に特化した、片手タップ前提の買い物リストアプリです。
+日常の買い物に特化した、スマホ片手操作前提の買い物リスト Web アプリです。
+「売場でのドラッグ操作」を排除し、親指タップのみで最小の負担で完結する買い物体験を提供します。
 
-## 構成
+## 📱 プロダクトの目的と特長
 
-- `src/`: Vite + React + TypeScript のフロントエンド
-- `docker-compose.yml`: ローカル開発用
+- **片手・親指操作に特化**: ドラッグ＆ドロップなどの複雑なジェスチャーは排除し、タップ優先の設計。
+- **シンプルな3段階フロー**:
+  1. テンプレート（リスト一覧）から選んで、買い物リストへ追加。
+  2. 買い物中は、カゴに入れたアイテムをワンタップでチェック。
+  3. 最後に「完了」ボタンで、チェック済み項目を一括消去。
+- **リスト並び替え**: 買い物ボード全体（カラム）を、ハンドル `☰` を掴んで左右にドラッグして自由に並び替え可能。
+- **データのバックアップ**: ツールバーの「エクスポート」ボタンより、時分秒タイムスタンプ付きの JSON データとしてバックアップを瞬時にダウンロード可能。
 
-## ローカル開発
+## 🛠 構成
+
+- **フロントエンド**: `src/` (Vite + React + TypeScript)
+- **バックエンド**: `src/worker/` (Cloudflare Workers + Hono)
+- **データベース**: Cloudflare D1 (状態の永続化)
+- **ローカル環境**: `docker-compose.yml` によるコンテナ開発
+
+---
+
+## 🚀 ローカル開発
+
+### 1. フロントエンドの起動
 
 ```bash
 docker compose up -d
-docker compose exec app bash
-cd /app
-npm install
-npm run dev -- --host
 ```
 
-## Cloudflare Pages デプロイ
+コンテナ内の Vite 開発サーバーがホストの `http://localhost:5173` で起動します。
 
-GitHub に push したら自動デプロイする前提では、Cloudflare Pages にこのリポジトリを接続します。
+### 2. バックエンド（Worker）の起動
 
-Cloudflare 側の設定:
+```bash
+bash scripts/start-worker.sh
+```
 
-- Framework preset: `Vite`
-- Root directory: `src`
-- Build command: `npm run build`
-- Build output directory: `dist`
+これにより、コンテナ内で `wrangler dev` が立ち上がり、API が `http://localhost:8787` で起動します。
 
-補足:
+---
 
-- `src/wrangler.jsonc` に `pages_build_output_dir` を定義済み
-- TypeScript のビルドキャッシュは `src/.cache/` に出力する設定済み
+## 🗄 データベース（D1）の操作
 
-公式ドキュメント:
+データベースを初期化、またはマイグレーションデータやサンプルデータをローカルの D1 に適用するには、コンテナ内で `wrangler d1` コマンドを実行します。
 
-- Git integration: https://developers.cloudflare.com/pages/get-started/git-integration/
-- Build configuration: https://developers.cloudflare.com/pages/configuration/build-configuration/
-- Wrangler configuration for Pages: https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+### サンプルデータの適用 (ローカル)
+
+```bash
+docker compose exec -T app npx wrangler d1 execute kaimono-memo-db --local --file=d1/seed.sql
+```
+
+---
+
+## 🌐 本番へのデプロイ
+
+`main` ブランチへコミットしプッシュすると、GitHub 連携により自動的に Cloudflare Workers へのビルド・デプロイが実行されます。
+手動でデプロイする場合は、`src/` ディレクトリで以下のコマンドを実行します：
+
+```bash
+npx wrangler deploy
+```

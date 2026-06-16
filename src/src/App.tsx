@@ -27,6 +27,10 @@ type BoardColumn = {
 }
 
 type PageMode = 'lists' | 'shopping'
+type CheckedItems = Record<string, true>
+type BasketItems = Record<string, true>
+
+const getItemKey = (columnId: string, item: string) => `${columnId}::${item}`
 
 const initialBoardColumns: BoardColumn[] = [
   {
@@ -130,10 +134,14 @@ const initialBoardColumns: BoardColumn[] = [
 function SortableItemCard({
   columnId,
   item,
+  checked,
+  onToggleChecked,
   onDeleteCard,
 }: {
   columnId: string
   item: string
+  checked: boolean
+  onToggleChecked: (columnId: string, item: string) => void
   onDeleteCard: (columnId: string, item: string) => void
 }) {
   const {
@@ -161,8 +169,20 @@ function SortableItemCard({
     <article
       ref={setNodeRef}
       style={style}
-      className={`item-card ${isDragging ? 'is-dragging' : ''}`}
+      className={`item-card ${isDragging ? 'is-dragging' : ''} ${
+        checked ? 'is-checked' : ''
+      }`}
     >
+      <label
+        className="item-check"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() => onToggleChecked(columnId, item)}
+        />
+      </label>
       <button
         type="button"
         className="item-delete-button"
@@ -189,6 +209,7 @@ function BoardColumnSection({
   editingTitleValue,
   isAddingCard,
   newCardValue,
+  checkedItems,
   onStartTitleEdit,
   onEditingTitleChange,
   onCommitTitle,
@@ -198,6 +219,7 @@ function BoardColumnSection({
   onNewCardValueChange,
   onAddCard,
   onCancelAddCard,
+  onToggleChecked,
   onDeleteCard,
 }: {
   column: BoardColumn
@@ -206,6 +228,7 @@ function BoardColumnSection({
   editingTitleValue: string
   isAddingCard: boolean
   newCardValue: string
+  checkedItems: CheckedItems
   onStartTitleEdit: (columnId: string) => void
   onEditingTitleChange: (value: string) => void
   onCommitTitle: (columnId: string) => void
@@ -215,6 +238,7 @@ function BoardColumnSection({
   onNewCardValueChange: (value: string) => void
   onAddCard: (columnId: string) => void
   onCancelAddCard: () => void
+  onToggleChecked: (columnId: string, item: string) => void
   onDeleteCard: (columnId: string, item: string) => void
 }) {
   const { setNodeRef } = useDroppable({
@@ -284,6 +308,8 @@ function BoardColumnSection({
               key={item}
               columnId={column.id}
               item={item}
+              checked={Boolean(checkedItems[getItemKey(column.id, item)])}
+              onToggleChecked={onToggleChecked}
               onDeleteCard={onDeleteCard}
             />
           ))}
@@ -354,6 +380,8 @@ function App() {
   const [newCardValue, setNewCardValue] = useState('')
   const [isAddingList, setIsAddingList] = useState(false)
   const [newListTitle, setNewListTitle] = useState('')
+  const [checkedItems, setCheckedItems] = useState<CheckedItems>({})
+  const [basketItems, setBasketItems] = useState<BasketItems>({})
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -563,6 +591,27 @@ function App() {
     setNewCardValue('')
   }
 
+  const toggleChecked = (columnId: string, item: string) => {
+    const itemKey = getItemKey(columnId, item)
+    setCheckedItems((current) => {
+      if (current[itemKey]) {
+        setBasketItems((basketCurrent) => {
+          const nextBasket = { ...basketCurrent }
+          delete nextBasket[itemKey]
+          return nextBasket
+        })
+        const next = { ...current }
+        delete next[itemKey]
+        return next
+      }
+
+      return {
+        ...current,
+        [itemKey]: true,
+      }
+    })
+  }
+
   const deleteColumn = (columnId: string) => {
     const targetColumn = columns.find((column) => column.id === columnId)
     if (!targetColumn) {
@@ -581,6 +630,24 @@ function App() {
     setColumns((currentColumns) =>
       currentColumns.filter((column) => column.id !== columnId),
     )
+    setCheckedItems((current) => {
+      const next = { ...current }
+      Object.keys(next).forEach((key) => {
+        if (key.startsWith(`${columnId}::`)) {
+          delete next[key]
+        }
+      })
+      return next
+    })
+    setBasketItems((current) => {
+      const next = { ...current }
+      Object.keys(next).forEach((key) => {
+        if (key.startsWith(`${columnId}::`)) {
+          delete next[key]
+        }
+      })
+      return next
+    })
 
     if (editingColumnId === columnId) {
       setEditingColumnId(null)
@@ -593,6 +660,7 @@ function App() {
       return
     }
 
+    const itemKey = getItemKey(columnId, item)
     setColumns((currentColumns) =>
       currentColumns.map((column) =>
         column.id === columnId
@@ -603,6 +671,61 @@ function App() {
           : column,
       ),
     )
+    setCheckedItems((current) => {
+      const next = { ...current }
+      delete next[itemKey]
+      return next
+    })
+    setBasketItems((current) => {
+      const next = { ...current }
+      delete next[itemKey]
+      return next
+    })
+  }
+
+  const selectedItems = columns.flatMap((column) =>
+    column.items
+      .filter((item) => checkedItems[getItemKey(column.id, item)])
+      .map((item) => ({
+        key: getItemKey(column.id, item),
+        item,
+        sourceTitle: column.title,
+        columnId: column.id,
+      })),
+  )
+
+  const shoppingItems = selectedItems.filter((entry) => !basketItems[entry.key])
+  const basketListItems = selectedItems.filter((entry) => basketItems[entry.key])
+
+  const moveToBasket = (itemKey: string) => {
+    setBasketItems((current) => ({
+      ...current,
+      [itemKey]: true,
+    }))
+  }
+
+  const moveBackToShopping = (itemKey: string) => {
+    setBasketItems((current) => {
+      const next = { ...current }
+      delete next[itemKey]
+      return next
+    })
+  }
+
+  const completeShopping = () => {
+    const basketKeys = Object.keys(basketItems)
+    if (basketKeys.length === 0) {
+      return
+    }
+
+    setBasketItems({})
+    setCheckedItems((current) => {
+      const next = { ...current }
+      basketKeys.forEach((key) => {
+        delete next[key]
+      })
+      return next
+    })
   }
 
   return (
@@ -648,6 +771,7 @@ function App() {
                 editingTitleValue={editingTitleValue}
                 isAddingCard={addingCardColumnId === column.id}
                 newCardValue={newCardValue}
+                checkedItems={checkedItems}
                 onStartTitleEdit={startTitleEdit}
                 onEditingTitleChange={setEditingTitleValue}
                 onCommitTitle={commitTitleEdit}
@@ -657,6 +781,7 @@ function App() {
                 onNewCardValueChange={setNewCardValue}
                 onAddCard={addCard}
                 onCancelAddCard={cancelAddCard}
+                onToggleChecked={toggleChecked}
                 onDeleteCard={deleteCard}
               />
             ))}
@@ -718,9 +843,59 @@ function App() {
         </DndContext>
       ) : (
         <section className="shopping-page" aria-label="買い物リスト画面">
-          <div className="shopping-page-card">
-            <h1>買い物リスト</h1>
-            <p>ここは別画面です。次に買い物中 UI を作れます。</p>
+          <div className="shopping-page-board">
+            <section className="shopping-page-card">
+              <h1>買い物リスト</h1>
+              {shoppingItems.length === 0 ? (
+                <p>リスト一覧でチェックしたものがここに出ます。</p>
+              ) : (
+                <div className="shopping-items">
+                  {shoppingItems.map((entry) => (
+                    <button
+                      key={entry.key}
+                      type="button"
+                      className="shopping-item shopping-item-button"
+                      onClick={() => moveToBasket(entry.key)}
+                    >
+                      <span className="shopping-item-name">{entry.item}</span>
+                      <span className="shopping-item-source">{entry.sourceTitle}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="shopping-page-card">
+              <h1>カゴ</h1>
+              {basketListItems.length === 0 ? (
+                <p>買い物リスト側の項目をタップすると、ここへ入ります。</p>
+              ) : (
+                <>
+                  <div className="shopping-items">
+                    {basketListItems.map((entry) => (
+                      <button
+                        key={entry.key}
+                        type="button"
+                        className="shopping-item shopping-item-button is-basket"
+                        onClick={() => moveBackToShopping(entry.key)}
+                      >
+                        <span className="shopping-item-name">{entry.item}</span>
+                        <span className="shopping-item-source">{entry.sourceTitle}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="shopping-complete-area">
+                    <button
+                      type="button"
+                      className="shopping-complete-button"
+                      onClick={completeShopping}
+                    >
+                      買い物完了
+                    </button>
+                  </div>
+                </>
+              )}
+            </section>
           </div>
         </section>
       )}

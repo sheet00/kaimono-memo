@@ -9,6 +9,18 @@ import type { BasketItems, CheckedItems, PageMode, BoardColumn } from './types/b
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:8787' : ''
 
+const listKey = (() => {
+  const params = new URLSearchParams(window.location.search)
+  let key = params.get('list')
+  if (!key) {
+    key = crypto.randomUUID()
+    params.set('list', key)
+    const newUrl = `${window.location.pathname}?${params.toString()}`
+    window.history.replaceState({}, '', newUrl)
+  }
+  return key
+})()
+
 function App() {
   const [columns, setColumns] = useState<BoardColumn[]>([])
   const [pageMode, setPageMode] = useState<PageMode>('lists')
@@ -21,7 +33,11 @@ function App() {
   useEffect(() => {
     const loadAppState = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/app-state`)
+        const response = await fetch(`${API_BASE}/api/app-state`, {
+          headers: {
+            'x-list-key': listKey,
+          },
+        })
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
         }
@@ -39,6 +55,7 @@ function App() {
     loadAppState()
   }, [])
 
+
   useEffect(() => {
     if (!isLoaded) return
 
@@ -48,6 +65,7 @@ function App() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-list-key': listKey,
           },
           body: JSON.stringify({
             lists: columns.map((col) => ({

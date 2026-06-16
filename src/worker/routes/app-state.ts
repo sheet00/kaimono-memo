@@ -16,7 +16,8 @@ appStateRoute.get('/app-state', async (c) => {
     )
   }
 
-  const json = await fetchAppStateJson(db)
+  const listKey = c.req.header('x-list-key') || 'main'
+  const json = await fetchAppStateJson(db, listKey)
   if (!json) {
     return c.json({
       lists: [],
@@ -41,8 +42,9 @@ appStateRoute.post('/app-state', async (c) => {
   }
 
   try {
+    const listKey = c.req.header('x-list-key') || 'main'
     const body = await c.req.json()
-    await saveAppStateJson(db, JSON.stringify(body))
+    await saveAppStateJson(db, listKey, JSON.stringify(body))
     return c.json({ success: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'

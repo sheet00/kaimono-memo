@@ -1,5 +1,5 @@
-import { useDroppable } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { KeyboardEvent } from 'react'
 import type { BoardColumn, CheckedItems } from '../types/board'
 import { SortableItemCard } from './SortableItemCard'
@@ -57,7 +57,14 @@ export function BoardColumnSection({
   onCancelEditCard,
   onDeleteCard,
 }: BoardColumnSectionProps) {
-  const { setNodeRef } = useDroppable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: column.id,
     data: {
       type: 'column',
@@ -65,13 +72,29 @@ export function BoardColumnSection({
     },
   })
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : undefined,
+  }
+
   return (
     <section
       ref={setNodeRef}
+      style={style}
       className={`board-column ${isOver ? 'is-drop-target' : ''}`}
     >
       <header className="column-header">
         <div className="column-title-row">
+          <button
+            type="button"
+            className="column-drag-handle"
+            aria-label={`${column.title}を並べ替え`}
+            {...attributes}
+            {...listeners}
+          >
+            ☰
+          </button>
           {isEditingTitle ? (
             <input
               className="column-title-input"

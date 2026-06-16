@@ -79,6 +79,30 @@ export function useListBoard({
   };
 
   const handleDragOver = (event: DragOverEvent) => {
+    const activeType = event.active.data.current?.type;
+    if (activeType === 'column') {
+      const activeId = String(event.active.id);
+      const overId = event.over ? String(event.over.id) : null;
+      if (!overId) return;
+
+      let overColumnId = overId;
+      const matchedColumn = columns.find((column) => column.id === overId);
+      if (!matchedColumn) {
+        const col = findColumnByItemId(overId);
+        if (col) {
+          overColumnId = col.id;
+        }
+      }
+
+      const oldIndex = columns.findIndex((column) => column.id === activeId);
+      const newIndex = columns.findIndex((column) => column.id === overColumnId);
+
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        setColumns((currentColumns) => arrayMove(currentColumns, oldIndex, newIndex));
+      }
+      return;
+    }
+
     const activeId = String(event.active.id);
     const overId = event.over ? String(event.over.id) : null;
 
@@ -143,6 +167,13 @@ export function useListBoard({
     const overId = event.over ? String(event.over.id) : null;
 
     if (!overId) {
+      setActiveItemId(null);
+      setOverColumnId(null);
+      return;
+    }
+
+    const activeType = event.active.data.current?.type;
+    if (activeType === 'column') {
       setActiveItemId(null);
       setOverColumnId(null);
       return;

@@ -194,6 +194,32 @@
   background: rgba(255, 255, 255, 0.7);
 }
 
+.column-drag-handle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.column-drag-handle:hover {
+  background: rgba(162, 75, 45, 0.08);
+  color: var(--text-strong);
+}
+
+.column-drag-handle:active {
+  cursor: grabbing;
+}
+
 .column-delete-button {
   flex: 0 0 auto;
   width: 2rem;

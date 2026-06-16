@@ -1,4 +1,5 @@
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core'
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { useState, useEffect } from 'react'
 import { BoardColumnSection } from './components/BoardColumnSection'
 import { ShoppingBoard } from './components/ShoppingBoard'
@@ -167,6 +168,12 @@ function App() {
     return null
   })()
 
+  const activeColumnTitle = (() => {
+    if (!listBoard.activeItemId) return null
+    const found = columns.find((col) => col.id === listBoard.activeItemId)
+    return found ? found.title : null
+  })()
+
 
 
   return (
@@ -200,7 +207,7 @@ function App() {
         </button>
       </div>
 
-      {pageMode === 'lists' ? (
+       {pageMode === 'lists' ? (
         <DndContext
           sensors={listBoard.sensors}
           collisionDetection={closestCorners}
@@ -209,29 +216,33 @@ function App() {
           onDragEnd={listBoard.handleDragEnd}
           onDragCancel={listBoard.handleDragCancel}
         >
-          <section className="board" aria-label="買い物ボード">
-            {columns.map((column) => (
-              <BoardColumnSection
-                key={column.id}
-                column={column}
-                isOver={listBoard.overColumnId === column.id}
-                isEditingTitle={listBoard.editingColumnId === column.id}
-                editingTitleValue={listBoard.editingTitleValue}
-                isAddingCard={listBoard.addingCardColumnId === column.id}
-                newCardValue={listBoard.newCardValue}
-                checkedItems={checkedItems}
-                editingCardKey={listBoard.editingCardKey}
-                editingCardValue={listBoard.editingCardValue}
-                onStartTitleEdit={listBoard.startTitleEdit}
-                onEditingTitleChange={listBoard.setEditingTitleValue}
-                onCommitTitle={listBoard.commitTitleEdit}
-                onCancelTitleEdit={listBoard.cancelTitleEdit}
-                onDeleteColumn={listBoard.deleteColumn}
-                onStartAddCard={listBoard.startAddCard}
-                onNewCardValueChange={listBoard.setNewCardValue}
-                onAddCard={listBoard.addCard}
-                onCancelAddCard={listBoard.cancelAddCard}
-                onToggleChecked={shoppingBoard.toggleChecked}
+          <SortableContext
+            items={columns.map((col) => col.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <section className="board" aria-label="買い物ボード">
+              {columns.map((column) => (
+                <BoardColumnSection
+                  key={column.id}
+                  column={column}
+                  isOver={listBoard.overColumnId === column.id}
+                  isEditingTitle={listBoard.editingColumnId === column.id}
+                  editingTitleValue={listBoard.editingTitleValue}
+                  isAddingCard={listBoard.addingCardColumnId === column.id}
+                  newCardValue={listBoard.newCardValue}
+                  checkedItems={checkedItems}
+                  editingCardKey={listBoard.editingCardKey}
+                  editingCardValue={listBoard.editingCardValue}
+                  onStartTitleEdit={listBoard.startTitleEdit}
+                  onEditingTitleChange={listBoard.setEditingTitleValue}
+                  onCommitTitle={listBoard.commitTitleEdit}
+                  onCancelTitleEdit={listBoard.cancelTitleEdit}
+                  onDeleteColumn={listBoard.deleteColumn}
+                  onStartAddCard={listBoard.startAddCard}
+                  onNewCardValueChange={listBoard.setNewCardValue}
+                  onAddCard={listBoard.addCard}
+                  onCancelAddCard={listBoard.cancelAddCard}
+                  onToggleChecked={shoppingBoard.toggleChecked}
                 onStartEditCard={listBoard.startEditCard}
                 onEditingCardValueChange={listBoard.setEditingCardValue}
                 onCommitEditCard={listBoard.commitEditCard}
@@ -286,9 +297,18 @@ function App() {
               )}
             </section>
           </section>
+        </SortableContext>
 
           <DragOverlay>
-            {listBoard.activeItemId ? (
+            {activeColumnTitle ? (
+              <div className="board-column board-column-overlay" style={{ width: '18.5rem', opacity: 0.8 }}>
+                <header className="column-header">
+                  <div className="column-title-row">
+                    <span className="column-title-button">{activeColumnTitle}</span>
+                  </div>
+                </header>
+              </div>
+            ) : listBoard.activeItemId ? (
               <article className="item-card item-card-overlay">
                 <p className="item-name">{activeItemName}</p>
               </article>

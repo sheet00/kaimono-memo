@@ -110,20 +110,29 @@ function App() {
         <div className="board-toolbar-nav">
           <button
             type="button"
-            className={`top-nav-button ${pageMode === 'lists' ? 'is-active' : ''}`}
+            className={`top-nav-button ${pageMode === 'lists' && listKey !== 'sample' ? 'is-active' : ''}`}
             onClick={() => setPageMode('lists')}
           >
             リスト一覧
           </button>
           <button
             type="button"
-            className={`top-nav-button ${pageMode === 'shopping' ? 'is-active' : ''}`}
+            className={`top-nav-button ${pageMode === 'shopping' && listKey !== 'sample' ? 'is-active' : ''}`}
             onClick={() => setPageMode('shopping')}
           >
             買い物リスト
           </button>
         </div>
-
+        <button
+          type="button"
+          className={`top-nav-button ${listKey === 'sample' ? 'is-active' : ''}`}
+          style={{ marginLeft: 'auto' }}
+          onClick={() => {
+            window.location.href = '?list=sample'
+          }}
+        >
+          サンプル
+        </button>
       </div>
 
       {pageMode === 'lists' ? (

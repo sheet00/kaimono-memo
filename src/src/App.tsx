@@ -47,9 +47,11 @@ const initialBoardColumns: BoardColumn[] = [
 function SortableItemCard({
   columnId,
   item,
+  onDeleteCard,
 }: {
   columnId: string
   item: string
+  onDeleteCard: (columnId: string, item: string) => void
 }) {
   const {
     attributes,
@@ -77,10 +79,22 @@ function SortableItemCard({
       ref={setNodeRef}
       style={style}
       className={`item-card ${isDragging ? 'is-dragging' : ''}`}
-      {...attributes}
-      {...listeners}
     >
-      <p className="item-name">{item}</p>
+      <button
+        type="button"
+        className="item-delete-button"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation()
+          onDeleteCard(columnId, item)
+        }}
+        aria-label={`${item}を削除`}
+      >
+        ×
+      </button>
+      <div className="item-card-body" {...attributes} {...listeners}>
+        <p className="item-name">{item}</p>
+      </div>
     </article>
   )
 }
@@ -90,21 +104,35 @@ function BoardColumnSection({
   isOver,
   isEditingTitle,
   editingTitleValue,
+  isAddingCard,
+  newCardValue,
   onStartTitleEdit,
   onEditingTitleChange,
   onCommitTitle,
   onCancelTitleEdit,
   onDeleteColumn,
+  onStartAddCard,
+  onNewCardValueChange,
+  onAddCard,
+  onCancelAddCard,
+  onDeleteCard,
 }: {
   column: BoardColumn
   isOver: boolean
   isEditingTitle: boolean
   editingTitleValue: string
+  isAddingCard: boolean
+  newCardValue: string
   onStartTitleEdit: (columnId: string) => void
   onEditingTitleChange: (value: string) => void
   onCommitTitle: (columnId: string) => void
   onCancelTitleEdit: () => void
   onDeleteColumn: (columnId: string) => void
+  onStartAddCard: (columnId: string) => void
+  onNewCardValueChange: (value: string) => void
+  onAddCard: (columnId: string) => void
+  onCancelAddCard: () => void
+  onDeleteCard: (columnId: string, item: string) => void
 }) {
   const { setNodeRef } = useDroppable({
     id: column.id,
@@ -169,13 +197,65 @@ function BoardColumnSection({
       >
         <div className="column-cards">
           {column.items.map((item) => (
-            <SortableItemCard key={item} columnId={column.id} item={item} />
+            <SortableItemCard
+              key={item}
+              columnId={column.id}
+              item={item}
+              onDeleteCard={onDeleteCard}
+            />
           ))}
           {column.items.length === 0 ? (
             <div className="empty-column">ここへ移動</div>
           ) : null}
         </div>
       </SortableContext>
+
+      <div className="add-card-area">
+        {isAddingCard ? (
+          <>
+            <input
+              className="add-card-input"
+              value={newCardValue}
+              onChange={(event) => onNewCardValueChange(event.target.value)}
+              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === 'Enter') {
+                  onAddCard(column.id)
+                }
+
+                if (event.key === 'Escape') {
+                  onCancelAddCard()
+                }
+              }}
+              placeholder="カード名を入力"
+              autoFocus
+            />
+            <div className="add-card-actions">
+              <button
+                type="button"
+                className="confirm-add-card-button"
+                onClick={() => onAddCard(column.id)}
+              >
+                追加
+              </button>
+              <button
+                type="button"
+                className="cancel-add-card-button"
+                onClick={onCancelAddCard}
+              >
+                キャンセル
+              </button>
+            </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="open-add-card-button"
+            onClick={() => onStartAddCard(column.id)}
+          >
+            ＋ カード追加
+          </button>
+        )}
+      </div>
     </section>
   )
 }
@@ -186,6 +266,10 @@ function App() {
   const [overColumnId, setOverColumnId] = useState<string | null>(null)
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null)
   const [editingTitleValue, setEditingTitleValue] = useState('')
+  const [addingCardColumnId, setAddingCardColumnId] = useState<string | null>(null)
+  const [newCardValue, setNewCardValue] = useState('')
+  const [isAddingList, setIsAddingList] = useState(false)
+  const [newListTitle, setNewListTitle] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -338,21 +422,61 @@ function App() {
     setEditingTitleValue('')
   }
 
+  const startAddList = () => {
+    setIsAddingList(true)
+    setNewListTitle('')
+  }
+
+  const cancelAddList = () => {
+    setIsAddingList(false)
+    setNewListTitle('')
+  }
+
   const addList = () => {
-    const nextIndex = columns.length + 1
+    const nextTitle = newListTitle.trim()
+    if (!nextTitle) {
+      return
+    }
+
     const newColumnId = `list-${Date.now()}`
-    const newTitle = `新しいリスト ${nextIndex}`
 
     setColumns((currentColumns) => [
       ...currentColumns,
       {
         id: newColumnId,
-        title: newTitle,
+        title: nextTitle,
         items: [],
       },
     ])
-    setEditingColumnId(newColumnId)
-    setEditingTitleValue(newTitle)
+    setIsAddingList(false)
+    setNewListTitle('')
+  }
+
+  const startAddCard = (columnId: string) => {
+    setAddingCardColumnId(columnId)
+    setNewCardValue('')
+  }
+
+  const cancelAddCard = () => {
+    setAddingCardColumnId(null)
+    setNewCardValue('')
+  }
+
+  const addCard = (columnId: string) => {
+    const nextCardName = newCardValue.trim()
+    if (!nextCardName) {
+      return
+    }
+
+    setColumns((currentColumns) =>
+      currentColumns.map((column) =>
+        column.id === columnId
+          ? { ...column, items: [...column.items, nextCardName] }
+          : column,
+      ),
+    )
+    setAddingCardColumnId(null)
+    setNewCardValue('')
   }
 
   const deleteColumn = (columnId: string) => {
@@ -380,12 +504,70 @@ function App() {
     }
   }
 
+  const deleteCard = (columnId: string, item: string) => {
+    if (!window.confirm(`「${item}」を削除してもいいですか？`)) {
+      return
+    }
+
+    setColumns((currentColumns) =>
+      currentColumns.map((column) =>
+        column.id === columnId
+          ? {
+              ...column,
+              items: column.items.filter((currentItem) => currentItem !== item),
+            }
+          : column,
+      ),
+    )
+  }
+
   return (
     <main className="board-page">
       <div className="board-toolbar">
-        <button type="button" className="add-list-button" onClick={addList}>
-          リスト追加
-        </button>
+        {isAddingList ? (
+          <div className="add-list-form">
+            <input
+              className="add-list-input"
+              value={newListTitle}
+              onChange={(event) => setNewListTitle(event.target.value)}
+              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === 'Enter') {
+                  addList()
+                }
+
+                if (event.key === 'Escape') {
+                  cancelAddList()
+                }
+              }}
+              placeholder="リスト名を入力"
+              autoFocus
+            />
+            <div className="add-list-actions">
+              <button
+                type="button"
+                className="confirm-add-list-button"
+                onClick={addList}
+              >
+                追加
+              </button>
+              <button
+                type="button"
+                className="cancel-add-list-button"
+                onClick={cancelAddList}
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="add-list-button"
+            onClick={startAddList}
+          >
+            リスト追加
+          </button>
+        )}
       </div>
 
       <DndContext
@@ -407,11 +589,18 @@ function App() {
               isOver={overColumnId === column.id}
               isEditingTitle={editingColumnId === column.id}
               editingTitleValue={editingTitleValue}
+              isAddingCard={addingCardColumnId === column.id}
+              newCardValue={newCardValue}
               onStartTitleEdit={startTitleEdit}
               onEditingTitleChange={setEditingTitleValue}
               onCommitTitle={commitTitleEdit}
               onCancelTitleEdit={cancelTitleEdit}
               onDeleteColumn={deleteColumn}
+              onStartAddCard={startAddCard}
+              onNewCardValueChange={setNewCardValue}
+              onAddCard={addCard}
+              onCancelAddCard={cancelAddCard}
+              onDeleteCard={deleteCard}
             />
           ))}
         </section>

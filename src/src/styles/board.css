@@ -10,16 +10,57 @@
   margin-bottom: 14px;
 }
 
+.add-list-button,
+.confirm-add-list-button,
+.cancel-add-list-button {
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
 .add-list-button {
   border: 1px solid rgba(162, 75, 45, 0.18);
-  border-radius: 999px;
   padding: 0.7rem 1rem;
   background: rgba(255, 253, 249, 0.85);
   color: var(--text-strong);
-  font: inherit;
   font-weight: 700;
-  cursor: pointer;
   box-shadow: var(--shadow-card);
+}
+
+.add-list-form {
+  width: min(22rem, 100%);
+}
+
+.add-list-input {
+  width: 100%;
+  border: 1px solid rgba(162, 75, 45, 0.2);
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-strong);
+  font: inherit;
+  box-shadow: var(--shadow-card);
+}
+
+.add-list-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.confirm-add-list-button {
+  padding: 0.7rem 1rem;
+  background: #a24b2d;
+  color: #fffaf5;
+  font-weight: 700;
+}
+
+.cancel-add-list-button {
+  padding: 0.7rem 0.9rem;
+  background: rgba(162, 75, 45, 0.08);
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .board {
@@ -109,18 +150,39 @@
 }
 
 .item-card {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 14px;
-  padding: 10px 12px 12px;
+  padding: 10px 40px 12px 12px;
   box-shadow: var(--shadow-card);
-  cursor: grab;
   user-select: none;
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease,
     opacity 0.16s ease;
   touch-action: none;
+}
+
+.item-card-body {
+  cursor: grab;
+  padding: 0;
+}
+
+.item-delete-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(162, 75, 45, 0.08);
+  color: var(--muted);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .item-card.is-dragging {
@@ -157,6 +219,59 @@
   font-weight: 700;
 }
 
+.add-card-area {
+  margin-top: 10px;
+}
+
+.open-add-card-button,
+.confirm-add-card-button,
+.cancel-add-card-button {
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.open-add-card-button {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--muted);
+  text-align: left;
+  font-weight: 700;
+}
+
+.add-card-input {
+  width: 100%;
+  border: 1px solid rgba(162, 75, 45, 0.2);
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-strong);
+  font: inherit;
+  box-shadow: var(--shadow-card);
+}
+
+.add-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.confirm-add-card-button {
+  padding: 0.7rem 1rem;
+  background: #a24b2d;
+  color: #fffaf5;
+  font-weight: 700;
+}
+
+.cancel-add-card-button {
+  padding: 0.7rem 0.9rem;
+  background: rgba(162, 75, 45, 0.08);
+  color: var(--muted);
+  font-weight: 700;
+}
+
 @media (max-width: 980px) {
   .board {
     grid-auto-columns: minmax(15rem, 16.5rem);
@@ -183,6 +298,6 @@
 
   .item-card {
     border-radius: 12px;
-    padding: 10px 11px 11px;
+    padding: 10px 38px 11px 11px;
   }
 }

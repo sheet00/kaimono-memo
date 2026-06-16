@@ -26,21 +26,104 @@ type BoardColumn = {
   items: string[]
 }
 
+type PageMode = 'lists' | 'shopping'
+
 const initialBoardColumns: BoardColumn[] = [
   {
     id: 'fridge',
     title: '冷蔵庫',
-    items: ['鶏もも肉', 'ヨーグルト', 'トイレットペーパー', 'バナナ'],
+    items: [
+      'ヨーグルト',
+      '麦茶',
+      'のむヨーグルト',
+      'なす',
+      'おみそ汁',
+      '玉ねぎ',
+      'スープ',
+      'ジャム',
+      'パン',
+      'マーガリン',
+      'ツナ缶',
+      'オリーブオイル',
+      'みそ',
+      'にんにく',
+      '牛乳',
+      'たまご',
+      'キャベツ',
+      'マヨネーズ',
+      'キムチ',
+      '豆腐',
+      '卵',
+      '納豆',
+      'にんじん',
+      'ドレッシング',
+      'チーズ',
+      '鮭',
+      'きゅうり',
+      'ニラ',
+    ],
   },
   {
     id: 'daily-necessities',
     title: '生活品',
-    items: ['にんじん', '玉ねぎ', '豆腐'],
+    items: [
+      '化粧水',
+      'お風呂洗剤',
+      'ゴミ袋(30L大)',
+      '犬おやつ',
+      '洗濯洗剤',
+      'リンス',
+      'アルミホイル',
+      'お茶パック',
+      'にんにくチューブ',
+      'せっけん',
+      'ラップ',
+      'キッチンペーパー',
+      '単2電池',
+      'シャンプー',
+      '玄関芳香剤',
+      '歯磨き粉',
+      'ビニール袋',
+      'トイレットペーパー',
+      '重曹',
+      '柔軟剤',
+      '洗顔',
+      '流し漂白',
+      '漂白剤',
+    ],
   },
   {
     id: 'occasional',
     title: 'たまに買う',
-    items: ['ラップ', '乾電池', 'スポンジ'],
+    items: [
+      'コーヒーフィルター',
+      'CR2032',
+      '醤油',
+      'かつおぶし、あげだま',
+      '歯磨き粉',
+      'めんつゆ',
+      'レモン果汁',
+      '山椒',
+      '砂糖',
+      'クッキングシート',
+      'ココナツミルク',
+      'はちみつ',
+      'お茶',
+      'お好み焼きソース',
+      'ケチャップ',
+      'ミロ',
+      'ハイター',
+      'クイックルワイパー',
+      'コーヒー',
+      'ピザ用チーズ',
+      'こめ',
+      'のどあめ',
+      'タバスコ',
+      '白ワイン、赤ワイン',
+      '爪楊枝',
+      'ロキソニン',
+      'どら焼き',
+    ],
   },
 ]
 
@@ -262,6 +345,7 @@ function BoardColumnSection({
 
 function App() {
   const [columns, setColumns] = useState(initialBoardColumns)
+  const [pageMode, setPageMode] = useState<PageMode>('lists')
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
   const [overColumnId, setOverColumnId] = useState<string | null>(null)
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null)
@@ -524,95 +608,122 @@ function App() {
   return (
     <main className="board-page">
       <div className="board-toolbar">
-        {isAddingList ? (
-          <div className="add-list-form">
-            <input
-              className="add-list-input"
-              value={newListTitle}
-              onChange={(event) => setNewListTitle(event.target.value)}
-              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                if (event.key === 'Enter') {
-                  addList()
-                }
-
-                if (event.key === 'Escape') {
-                  cancelAddList()
-                }
-              }}
-              placeholder="リスト名を入力"
-              autoFocus
-            />
-            <div className="add-list-actions">
-              <button
-                type="button"
-                className="confirm-add-list-button"
-                onClick={addList}
-              >
-                追加
-              </button>
-              <button
-                type="button"
-                className="cancel-add-list-button"
-                onClick={cancelAddList}
-              >
-                キャンセル
-              </button>
-            </div>
-          </div>
-        ) : (
+        <div className="board-toolbar-nav">
           <button
             type="button"
-            className="add-list-button"
-            onClick={startAddList}
+            className={`top-nav-button ${pageMode === 'lists' ? 'is-active' : ''}`}
+            onClick={() => setPageMode('lists')}
           >
-            リスト追加
+            リスト一覧
           </button>
-        )}
+          <button
+            type="button"
+            className={`top-nav-button ${pageMode === 'shopping' ? 'is-active' : ''}`}
+            onClick={() => setPageMode('shopping')}
+          >
+            買い物リスト
+          </button>
+        </div>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-        onDragCancel={() => {
-          setActiveItemId(null)
-          setOverColumnId(null)
-        }}
-      >
-        <section className="board" aria-label="買い物ボード">
-          {columns.map((column) => (
-            <BoardColumnSection
-              key={column.id}
-              column={column}
-              isOver={overColumnId === column.id}
-              isEditingTitle={editingColumnId === column.id}
-              editingTitleValue={editingTitleValue}
-              isAddingCard={addingCardColumnId === column.id}
-              newCardValue={newCardValue}
-              onStartTitleEdit={startTitleEdit}
-              onEditingTitleChange={setEditingTitleValue}
-              onCommitTitle={commitTitleEdit}
-              onCancelTitleEdit={cancelTitleEdit}
-              onDeleteColumn={deleteColumn}
-              onStartAddCard={startAddCard}
-              onNewCardValueChange={setNewCardValue}
-              onAddCard={addCard}
-              onCancelAddCard={cancelAddCard}
-              onDeleteCard={deleteCard}
-            />
-          ))}
-        </section>
+      {pageMode === 'lists' ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => {
+            setActiveItemId(null)
+            setOverColumnId(null)
+          }}
+        >
+          <section className="board" aria-label="買い物ボード">
+            {columns.map((column) => (
+              <BoardColumnSection
+                key={column.id}
+                column={column}
+                isOver={overColumnId === column.id}
+                isEditingTitle={editingColumnId === column.id}
+                editingTitleValue={editingTitleValue}
+                isAddingCard={addingCardColumnId === column.id}
+                newCardValue={newCardValue}
+                onStartTitleEdit={startTitleEdit}
+                onEditingTitleChange={setEditingTitleValue}
+                onCommitTitle={commitTitleEdit}
+                onCancelTitleEdit={cancelTitleEdit}
+                onDeleteColumn={deleteColumn}
+                onStartAddCard={startAddCard}
+                onNewCardValueChange={setNewCardValue}
+                onAddCard={addCard}
+                onCancelAddCard={cancelAddCard}
+                onDeleteCard={deleteCard}
+              />
+            ))}
+            <section className="add-list-column">
+              {isAddingList ? (
+                <div className="add-list-form">
+                  <input
+                    className="add-list-input"
+                    value={newListTitle}
+                    onChange={(event) => setNewListTitle(event.target.value)}
+                    onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                      if (event.key === 'Enter') {
+                        addList()
+                      }
 
-        <DragOverlay>
-          {activeItemId ? (
-            <article className="item-card item-card-overlay">
-              <p className="item-name">{activeItemId}</p>
-            </article>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+                      if (event.key === 'Escape') {
+                        cancelAddList()
+                      }
+                    }}
+                    placeholder="リスト名を入力"
+                    autoFocus
+                  />
+                  <div className="add-list-actions">
+                    <button
+                      type="button"
+                      className="confirm-add-list-button"
+                      onClick={addList}
+                    >
+                      追加
+                    </button>
+                    <button
+                      type="button"
+                      className="cancel-add-list-button"
+                      onClick={cancelAddList}
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="add-list-button add-list-column-button"
+                  onClick={startAddList}
+                >
+                  リスト追加
+                </button>
+              )}
+            </section>
+          </section>
+
+          <DragOverlay>
+            {activeItemId ? (
+              <article className="item-card item-card-overlay">
+                <p className="item-name">{activeItemId}</p>
+              </article>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      ) : (
+        <section className="shopping-page" aria-label="買い物リスト画面">
+          <div className="shopping-page-card">
+            <h1>買い物リスト</h1>
+            <p>ここは別画面です。次に買い物中 UI を作れます。</p>
+          </div>
+        </section>
+      )}
     </main>
   )
 }

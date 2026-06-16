@@ -173,16 +173,16 @@ function SortableItemCard({
         checked ? 'is-checked' : ''
       }`}
     >
-      <label
-        className="item-check"
+      <button
+        type="button"
+        className="item-drag-handle"
+        aria-label={`${item}を並べ替え`}
         onPointerDown={(event) => event.stopPropagation()}
+        {...attributes}
+        {...listeners}
       >
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={() => onToggleChecked(columnId, item)}
-        />
-      </label>
+        ⋮⋮
+      </button>
       <button
         type="button"
         className="item-delete-button"
@@ -195,9 +195,13 @@ function SortableItemCard({
       >
         ×
       </button>
-      <div className="item-card-body" {...attributes} {...listeners}>
+      <button
+        type="button"
+        className="item-card-body"
+        onClick={() => onToggleChecked(columnId, item)}
+      >
         <p className="item-name">{item}</p>
-      </div>
+      </button>
     </article>
   )
 }

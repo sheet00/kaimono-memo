@@ -1,13 +1,26 @@
+import { drizzle } from 'drizzle-orm/d1'
+import { eq } from 'drizzle-orm'
+import { appState } from '../db/schema'
+
 export async function fetchAppStateJson(db: D1Database): Promise<string | null> {
-  const result = await db
-    .prepare("SELECT value FROM app_state WHERE key = 'main'")
-    .first<{ value: string }>()
+  const client = drizzle(db)
+  const result = await client
+    .select({ value: appState.value })
+    .from(appState)
+    .where(eq(appState.key, 'main'))
+    .get()
+
   return result?.value ?? null
 }
 
 export async function saveAppStateJson(db: D1Database, json: string): Promise<void> {
-  await db
-    .prepare("INSERT OR REPLACE INTO app_state (key, value) VALUES ('main', ?)")
-    .bind(json)
+  const client = drizzle(db)
+  await client
+    .insert(appState)
+    .values({ key: 'main', value: json })
+    .onConflictDoUpdate({
+      target: appState.key,
+      set: { value: json },
+    })
     .run()
 }

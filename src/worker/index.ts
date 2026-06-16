@@ -1,36 +1,23 @@
-export interface Env {
-  ASSETS: Fetcher
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+
+type Env = {
+  Bindings: {
+    ASSETS: Fetcher
+  }
 }
 
 const DEV_ORIGIN = 'http://localhost:5173'
+const app = new Hono<Env>()
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': DEV_ORIGIN,
-  'Access-Control-Allow-Methods': 'GET,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-}
+app.use('/api/*', cors({ origin: DEV_ORIGIN }))
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url)
+app.get('/api/health', (c) =>
+  c.json({
+    ok: true,
+  }),
+)
 
-    if (url.pathname.startsWith('/api/') && request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: corsHeaders,
-      })
-    }
+app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw))
 
-    if (url.pathname === '/api/health') {
-      return Response.json(
-        {
-          ok: true,
-        },
-        {
-          headers: corsHeaders,
-        },
-      )
-    }
-
-    return env.ASSETS.fetch(request)
-  },
-}
+export default app

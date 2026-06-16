@@ -19,6 +19,13 @@
   flex-wrap: wrap;
 }
 
+.health-check-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .top-nav-button {
   border: 0;
   border-radius: 12px;
@@ -33,6 +40,29 @@
 .top-nav-button.is-active {
   background: #a24b2d;
   color: #fffaf5;
+}
+
+.health-check-button {
+  border: 0;
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  background: #5c7a58;
+  color: #f8fff3;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.health-check-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.health-check-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .add-list-button,

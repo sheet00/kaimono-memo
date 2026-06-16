@@ -8,11 +8,15 @@ import { useShoppingBoard } from './hooks/useShoppingBoard'
 import './styles/board.css'
 import type { BasketItems, CheckedItems, PageMode } from './types/board'
 
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8787' : ''
+
 function App() {
   const [columns, setColumns] = useState(initialBoardColumns)
   const [pageMode, setPageMode] = useState<PageMode>('lists')
   const [checkedItems, setCheckedItems] = useState<CheckedItems>({})
   const [basketItems, setBasketItems] = useState<BasketItems>({})
+  const [healthStatus, setHealthStatus] = useState('未確認')
+  const [isCheckingHealth, setIsCheckingHealth] = useState(false)
 
   const listBoard = useListBoard({
     columns,
@@ -27,6 +31,26 @@ function App() {
     setCheckedItems,
     setBasketItems,
   })
+
+  const handleHealthCheck = async () => {
+    setIsCheckingHealth(true)
+    setHealthStatus('確認中...')
+
+    try {
+      const response = await fetch(`${API_BASE}/api/health`)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const data = (await response.json()) as { ok?: boolean }
+      setHealthStatus(data.ok ? 'OK' : '異常')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'request failed'
+      setHealthStatus(`失敗: ${message}`)
+    } finally {
+      setIsCheckingHealth(false)
+    }
+  }
 
   return (
     <main className="board-page">
@@ -46,6 +70,17 @@ function App() {
           >
             買い物リスト
           </button>
+        </div>
+        <div className="health-check-panel">
+          <button
+            type="button"
+            className="health-check-button"
+            onClick={handleHealthCheck}
+            disabled={isCheckingHealth}
+          >
+            {isCheckingHealth ? '確認中...' : 'ヘルスチェック'}
+          </button>
+          <p className="health-check-status">{healthStatus}</p>
         </div>
       </div>
 

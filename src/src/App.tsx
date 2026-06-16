@@ -176,6 +176,31 @@ function App() {
 
 
 
+  const handleExport = () => {
+    const exportData = {
+      lists: columns.map((col) => ({
+        id: col.id,
+        title: col.title,
+        items: col.items || [],
+      })),
+      checkedItems,
+      basketItems,
+    }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const now = new Date()
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '')
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '')
+    const timestamp = `${dateStr}-${timeStr}`
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `kaimono-memo-${listKey}-${timestamp}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <main className="board-page">
       <div className="board-toolbar">
@@ -197,8 +222,15 @@ function App() {
         </div>
         <button
           type="button"
-          className={`top-nav-button ${listKey === 'sample' ? 'is-active' : ''}`}
+          className="top-nav-button"
           style={{ marginLeft: 'auto' }}
+          onClick={handleExport}
+        >
+          エクスポート
+        </button>
+        <button
+          type="button"
+          className={`top-nav-button ${listKey === 'sample' ? 'is-active' : ''}`}
           onClick={() => {
             window.location.href = '?list=sample'
           }}

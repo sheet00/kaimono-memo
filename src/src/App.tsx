@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useState } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import './styles/board.css'
 
 type BoardColumn = {
@@ -88,9 +88,21 @@ function SortableItemCard({
 function BoardColumnSection({
   column,
   isOver,
+  isEditingTitle,
+  editingTitleValue,
+  onStartTitleEdit,
+  onEditingTitleChange,
+  onCommitTitle,
+  onCancelTitleEdit,
 }: {
   column: BoardColumn
   isOver: boolean
+  isEditingTitle: boolean
+  editingTitleValue: string
+  onStartTitleEdit: (columnId: string) => void
+  onEditingTitleChange: (value: string) => void
+  onCommitTitle: (columnId: string) => void
+  onCancelTitleEdit: () => void
 }) {
   const { setNodeRef } = useDroppable({
     id: column.id,
@@ -106,7 +118,33 @@ function BoardColumnSection({
       className={`board-column ${isOver ? 'is-drop-target' : ''}`}
     >
       <header className="column-header">
-        <h2>{column.title}</h2>
+        {isEditingTitle ? (
+          <input
+            className="column-title-input"
+            value={editingTitleValue}
+            onChange={(event) => onEditingTitleChange(event.target.value)}
+            onBlur={() => onCommitTitle(column.id)}
+            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+              if (event.key === 'Enter') {
+                onCommitTitle(column.id)
+              }
+
+              if (event.key === 'Escape') {
+                onCancelTitleEdit()
+              }
+            }}
+            autoFocus
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        ) : (
+          <button
+            type="button"
+            className="column-title-button"
+            onClick={() => onStartTitleEdit(column.id)}
+          >
+            {column.title}
+          </button>
+        )}
       </header>
 
       <SortableContext
@@ -130,6 +168,8 @@ function App() {
   const [columns, setColumns] = useState(initialBoardColumns)
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
   const [overColumnId, setOverColumnId] = useState<string | null>(null)
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null)
+  const [editingTitleValue, setEditingTitleValue] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -249,6 +289,39 @@ function App() {
     setOverColumnId(null)
   }
 
+  const startTitleEdit = (columnId: string) => {
+    const targetColumn = columns.find((column) => column.id === columnId)
+    if (!targetColumn) {
+      return
+    }
+
+    setEditingColumnId(columnId)
+    setEditingTitleValue(targetColumn.title)
+  }
+
+  const commitTitleEdit = (columnId: string) => {
+    const nextTitle = editingTitleValue.trim()
+
+    if (!nextTitle) {
+      setEditingColumnId(null)
+      setEditingTitleValue('')
+      return
+    }
+
+    setColumns((currentColumns) =>
+      currentColumns.map((column) =>
+        column.id === columnId ? { ...column, title: nextTitle } : column,
+      ),
+    )
+    setEditingColumnId(null)
+    setEditingTitleValue('')
+  }
+
+  const cancelTitleEdit = () => {
+    setEditingColumnId(null)
+    setEditingTitleValue('')
+  }
+
   return (
     <main className="board-page">
       <DndContext
@@ -268,6 +341,12 @@ function App() {
               key={column.id}
               column={column}
               isOver={overColumnId === column.id}
+              isEditingTitle={editingColumnId === column.id}
+              editingTitleValue={editingTitleValue}
+              onStartTitleEdit={startTitleEdit}
+              onEditingTitleChange={setEditingTitleValue}
+              onCommitTitle={commitTitleEdit}
+              onCancelTitleEdit={cancelTitleEdit}
             />
           ))}
         </section>

@@ -37,9 +37,29 @@
   padding: 6px 6px 10px;
 }
 
-.column-header h2 {
+.column-title-button,
+.column-title-input {
+  width: 100%;
+  border: 0;
+  padding: 0;
   margin: 0;
+  background: transparent;
+  color: var(--text-strong);
   font-size: 1.1rem;
+  font-weight: 700;
+  text-align: left;
+  font-family: inherit;
+}
+
+.column-title-button {
+  cursor: text;
+}
+
+.column-title-input {
+  padding: 0.15rem 0.25rem;
+  border-radius: 8px;
+  outline: 1px solid rgba(162, 75, 45, 0.32);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .column-cards {

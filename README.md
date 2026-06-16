@@ -1,31 +1,40 @@
-# React Template (Vite + TS + Docker Compose)
+# kaimono-memo
 
-## プロジェクト構成
-- `docker-compose.yml`: ルートディレクトリ
-- `src/`: プロジェクトの全ソースコードと設定ファイル（`package.json` 等を含む）
+日常の買い物に特化した、片手タップ前提の買い物リストアプリです。
 
-## 初期化の手順
-1. コンテナをバックグラウンドで起動します。
-   ```bash
-   docker compose up -d
-   ```
-2. コンテナにログインします。
-   ```bash
-   docker compose exec app bash
-   ```
-3. コンテナ内の `/app` ディレクトリ（ホストの `src/`）で Vite を初期化します（※非対話形式）。
-   ```bash
-   npm exec --yes create-vite@latest -- . --template react-ts --yes
-   npm install
-   ```
+## 構成
 
-## 起動方法
-1. `docker-compose.yml` の `command` を開発サーバー起動用に変更します。
-   ```yaml
-   command: sh -c "npm install && npm run dev -- --host"
-   ```
-2. コンテナを起動します。
-   ```bash
-   docker compose up
-   ```
-3. ブラウザで `http://localhost:5173` にアクセスしてください。
+- `src/`: Vite + React + TypeScript のフロントエンド
+- `docker-compose.yml`: ローカル開発用
+
+## ローカル開発
+
+```bash
+docker compose up -d
+docker compose exec app bash
+cd /app
+npm install
+npm run dev -- --host
+```
+
+## Cloudflare Pages デプロイ
+
+GitHub に push したら自動デプロイする前提では、Cloudflare Pages にこのリポジトリを接続します。
+
+Cloudflare 側の設定:
+
+- Framework preset: `Vite`
+- Root directory: `src`
+- Build command: `npm run build`
+- Build output directory: `dist`
+
+補足:
+
+- `src/wrangler.jsonc` に `pages_build_output_dir` を定義済み
+- TypeScript のビルドキャッシュは `src/.cache/` に出力する設定済み
+
+公式ドキュメント:
+
+- Git integration: https://developers.cloudflare.com/pages/get-started/git-integration/
+- Build configuration: https://developers.cloudflare.com/pages/configuration/build-configuration/
+- Wrangler configuration for Pages: https://developers.cloudflare.com/pages/functions/wrangler-configuration/

@@ -236,7 +236,7 @@
   cursor: grab;
 }
 
-.item-delete-button {
+.item-edit-button {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -247,7 +247,7 @@
   background: rgba(162, 75, 45, 0.08);
   color: var(--muted);
   font: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -271,6 +271,39 @@
   font-weight: 700;
   color: var(--text-strong);
   line-height: 1.35;
+}
+
+.item-name-input {
+  width: 100%;
+  border: 1px solid rgba(162, 75, 45, 0.22);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text-strong);
+  font: inherit;
+  font-weight: 700;
+}
+
+.item-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.item-edit-delete-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #b14d3f;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .empty-column {
@@ -455,6 +488,6 @@
 
   .item-card {
     border-radius: 12px;
-    padding: 10px 38px 11px 40px;
+    padding: 10px 40px 11px 40px;
   }
 }

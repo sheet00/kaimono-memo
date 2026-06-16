@@ -1,11 +1,32 @@
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core'
+import { useState } from 'react'
 import { BoardColumnSection } from './components/BoardColumnSection'
 import { ShoppingBoard } from './components/ShoppingBoard'
-import { useBoardPage } from './hooks/useBoardPage'
+import { initialBoardColumns } from './data/initialBoardColumns'
+import { useListBoard } from './hooks/useListBoard'
+import { useShoppingBoard } from './hooks/useShoppingBoard'
 import './styles/board.css'
+import type { BasketItems, CheckedItems, PageMode } from './types/board'
 
 function App() {
-  const boardPage = useBoardPage()
+  const [columns, setColumns] = useState(initialBoardColumns)
+  const [pageMode, setPageMode] = useState<PageMode>('lists')
+  const [checkedItems, setCheckedItems] = useState<CheckedItems>({})
+  const [basketItems, setBasketItems] = useState<BasketItems>({})
+
+  const listBoard = useListBoard({
+    columns,
+    setColumns,
+    setCheckedItems,
+    setBasketItems,
+  })
+  const shoppingBoard = useShoppingBoard({
+    columns,
+    checkedItems,
+    basketItems,
+    setCheckedItems,
+    setBasketItems,
+  })
 
   return (
     <main className="board-page">
@@ -13,74 +34,74 @@ function App() {
         <div className="board-toolbar-nav">
           <button
             type="button"
-            className={`top-nav-button ${boardPage.pageMode === 'lists' ? 'is-active' : ''}`}
-            onClick={() => boardPage.setPageMode('lists')}
+            className={`top-nav-button ${pageMode === 'lists' ? 'is-active' : ''}`}
+            onClick={() => setPageMode('lists')}
           >
             リスト一覧
           </button>
           <button
             type="button"
-            className={`top-nav-button ${boardPage.pageMode === 'shopping' ? 'is-active' : ''}`}
-            onClick={() => boardPage.setPageMode('shopping')}
+            className={`top-nav-button ${pageMode === 'shopping' ? 'is-active' : ''}`}
+            onClick={() => setPageMode('shopping')}
           >
             買い物リスト
           </button>
         </div>
       </div>
 
-      {boardPage.pageMode === 'lists' ? (
+      {pageMode === 'lists' ? (
         <DndContext
-          sensors={boardPage.sensors}
+          sensors={listBoard.sensors}
           collisionDetection={closestCorners}
-          onDragStart={boardPage.handleDragStart}
-          onDragOver={boardPage.handleDragOver}
-          onDragEnd={boardPage.handleDragEnd}
-          onDragCancel={boardPage.handleDragCancel}
+          onDragStart={listBoard.handleDragStart}
+          onDragOver={listBoard.handleDragOver}
+          onDragEnd={listBoard.handleDragEnd}
+          onDragCancel={listBoard.handleDragCancel}
         >
           <section className="board" aria-label="買い物ボード">
-            {boardPage.columns.map((column) => (
+            {columns.map((column) => (
               <BoardColumnSection
                 key={column.id}
                 column={column}
-                isOver={boardPage.overColumnId === column.id}
-                isEditingTitle={boardPage.editingColumnId === column.id}
-                editingTitleValue={boardPage.editingTitleValue}
-                isAddingCard={boardPage.addingCardColumnId === column.id}
-                newCardValue={boardPage.newCardValue}
-                checkedItems={boardPage.checkedItems}
-                editingCardKey={boardPage.editingCardKey}
-                editingCardValue={boardPage.editingCardValue}
-                onStartTitleEdit={boardPage.startTitleEdit}
-                onEditingTitleChange={boardPage.setEditingTitleValue}
-                onCommitTitle={boardPage.commitTitleEdit}
-                onCancelTitleEdit={boardPage.cancelTitleEdit}
-                onDeleteColumn={boardPage.deleteColumn}
-                onStartAddCard={boardPage.startAddCard}
-                onNewCardValueChange={boardPage.setNewCardValue}
-                onAddCard={boardPage.addCard}
-                onCancelAddCard={boardPage.cancelAddCard}
-                onToggleChecked={boardPage.toggleChecked}
-                onStartEditCard={boardPage.startEditCard}
-                onEditingCardValueChange={boardPage.setEditingCardValue}
-                onCommitEditCard={boardPage.commitEditCard}
-                onCancelEditCard={boardPage.cancelEditCard}
-                onDeleteCard={boardPage.deleteCard}
+                isOver={listBoard.overColumnId === column.id}
+                isEditingTitle={listBoard.editingColumnId === column.id}
+                editingTitleValue={listBoard.editingTitleValue}
+                isAddingCard={listBoard.addingCardColumnId === column.id}
+                newCardValue={listBoard.newCardValue}
+                checkedItems={checkedItems}
+                editingCardKey={listBoard.editingCardKey}
+                editingCardValue={listBoard.editingCardValue}
+                onStartTitleEdit={listBoard.startTitleEdit}
+                onEditingTitleChange={listBoard.setEditingTitleValue}
+                onCommitTitle={listBoard.commitTitleEdit}
+                onCancelTitleEdit={listBoard.cancelTitleEdit}
+                onDeleteColumn={listBoard.deleteColumn}
+                onStartAddCard={listBoard.startAddCard}
+                onNewCardValueChange={listBoard.setNewCardValue}
+                onAddCard={listBoard.addCard}
+                onCancelAddCard={listBoard.cancelAddCard}
+                onToggleChecked={shoppingBoard.toggleChecked}
+                onStartEditCard={listBoard.startEditCard}
+                onEditingCardValueChange={listBoard.setEditingCardValue}
+                onCommitEditCard={listBoard.commitEditCard}
+                onCancelEditCard={listBoard.cancelEditCard}
+                onDeleteCard={listBoard.deleteCard}
               />
             ))}
             <section className="add-list-column">
-              {boardPage.isAddingList ? (
+              {listBoard.isAddingList ? (
                 <div className="add-list-form">
                   <input
                     className="add-list-input"
-                    value={boardPage.newListTitle}
-                    onChange={(event) => boardPage.setNewListTitle(event.target.value)}
+                    value={listBoard.newListTitle}
+                    onChange={(event) => listBoard.setNewListTitle(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
-                        boardPage.addList()
+                        listBoard.addList()
                       }
 
                       if (event.key === 'Escape') {
-                        boardPage.cancelAddList()
+                        listBoard.cancelAddList()
                       }
                     }}
                     placeholder="リスト名を入力"
@@ -90,14 +111,14 @@ function App() {
                     <button
                       type="button"
                       className="confirm-add-list-button"
-                      onClick={boardPage.addList}
+                      onClick={listBoard.addList}
                     >
                       追加
                     </button>
                     <button
                       type="button"
                       className="cancel-add-list-button"
-                      onClick={boardPage.cancelAddList}
+                      onClick={listBoard.cancelAddList}
                     >
                       キャンセル
                     </button>
@@ -107,7 +128,7 @@ function App() {
                 <button
                   type="button"
                   className="add-list-button add-list-column-button"
-                  onClick={boardPage.startAddList}
+                  onClick={listBoard.startAddList}
                 >
                   リスト追加
                 </button>
@@ -116,20 +137,20 @@ function App() {
           </section>
 
           <DragOverlay>
-            {boardPage.activeItemId ? (
+            {listBoard.activeItemId ? (
               <article className="item-card item-card-overlay">
-                <p className="item-name">{boardPage.activeItemId}</p>
+                <p className="item-name">{listBoard.activeItemId}</p>
               </article>
             ) : null}
           </DragOverlay>
         </DndContext>
       ) : (
         <ShoppingBoard
-          shoppingItems={boardPage.shoppingItems}
-          basketItems={boardPage.basketListItems}
-          onMoveToBasket={boardPage.moveToBasket}
-          onMoveBackToShopping={boardPage.moveBackToShopping}
-          onCompleteShopping={boardPage.completeShopping}
+          shoppingItems={shoppingBoard.shoppingItems}
+          basketItems={shoppingBoard.basketListItems}
+          onMoveToBasket={shoppingBoard.moveToBasket}
+          onMoveBackToShopping={shoppingBoard.moveBackToShopping}
+          onCompleteShopping={shoppingBoard.completeShopping}
         />
       )}
     </main>

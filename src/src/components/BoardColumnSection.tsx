@@ -2,7 +2,6 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { KeyboardEvent } from 'react'
 import type { BoardColumn, CheckedItems } from '../types/board'
-import { getItemKey } from '../utils/getItemKey'
 import { SortableItemCard } from './SortableItemCard'
 
 type BoardColumnSectionProps = {
@@ -24,12 +23,12 @@ type BoardColumnSectionProps = {
   onNewCardValueChange: (value: string) => void
   onAddCard: (columnId: string) => void
   onCancelAddCard: () => void
-  onToggleChecked: (columnId: string, item: string) => void
-  onStartEditCard: (columnId: string, item: string) => void
+  onToggleChecked: (itemId: string) => void
+  onStartEditCard: (columnId: string, itemId: string, currentName: string) => void
   onEditingCardValueChange: (value: string) => void
-  onCommitEditCard: (columnId: string, item: string) => void
+  onCommitEditCard: (columnId: string, itemId: string) => void
   onCancelEditCard: () => void
-  onDeleteCard: (columnId: string, item: string) => void
+  onDeleteCard: (columnId: string, itemId: string) => void
 }
 
 export function BoardColumnSection({
@@ -116,17 +115,17 @@ export function BoardColumnSection({
       </header>
 
       <SortableContext
-        items={column.items}
+        items={(column.items || []).map(item => item.id)}
         strategy={verticalListSortingStrategy}
       >
         <div className="column-cards">
-          {column.items.map((item) => (
+          {(column.items || []).map((item) => (
             <SortableItemCard
-              key={item}
+              key={item.id}
               columnId={column.id}
               item={item}
-              checked={Boolean(checkedItems[getItemKey(column.id, item)])}
-              isEditing={editingCardKey === getItemKey(column.id, item)}
+              checked={Boolean(checkedItems[item.id])}
+              isEditing={editingCardKey === item.id}
               editingValue={editingCardValue}
               onToggleChecked={onToggleChecked}
               onStartEditCard={onStartEditCard}
@@ -136,7 +135,7 @@ export function BoardColumnSection({
               onDeleteCard={onDeleteCard}
             />
           ))}
-          {column.items.length === 0 ? (
+          {(column.items || []).length === 0 ? (
             <div className="empty-column">ここへ移動</div>
           ) : null}
         </div>

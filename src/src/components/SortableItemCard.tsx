@@ -1,19 +1,20 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { KeyboardEvent } from 'react'
+import type { BoardItem } from '../types/board'
 
 type SortableItemCardProps = {
   columnId: string
-  item: string
+  item: BoardItem
   checked: boolean
   isEditing: boolean
   editingValue: string
-  onToggleChecked: (columnId: string, item: string) => void
-  onStartEditCard: (columnId: string, item: string) => void
+  onToggleChecked: (itemId: string) => void
+  onStartEditCard: (columnId: string, itemId: string, currentName: string) => void
   onEditingCardValueChange: (value: string) => void
-  onCommitEditCard: (columnId: string, item: string) => void
+  onCommitEditCard: (columnId: string, itemId: string) => void
   onCancelEditCard: () => void
-  onDeleteCard: (columnId: string, item: string) => void
+  onDeleteCard: (columnId: string, itemId: string) => void
 }
 
 export function SortableItemCard({
@@ -37,11 +38,11 @@ export function SortableItemCard({
     transition,
     isDragging,
   } = useSortable({
-    id: item,
+    id: item.id,
     data: {
       type: 'item',
       columnId,
-      item,
+      itemId: item.id,
     },
   })
 
@@ -61,7 +62,7 @@ export function SortableItemCard({
       <button
         type="button"
         className="item-drag-handle"
-        aria-label={`${item}を並べ替え`}
+        aria-label={`${item.name}を並べ替え`}
         onPointerDown={(event) => event.stopPropagation()}
         {...attributes}
         {...listeners}
@@ -74,9 +75,9 @@ export function SortableItemCard({
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation()
-          onStartEditCard(columnId, item)
+          onStartEditCard(columnId, item.id, item.name)
         }}
-        aria-label={`${item}を編集`}
+        aria-label={`${item.name}を編集`}
       >
         ✎
       </button>
@@ -86,10 +87,10 @@ export function SortableItemCard({
             className="item-name-input"
             value={editingValue}
             onChange={(event) => onEditingCardValueChange(event.target.value)}
-            onBlur={() => onCommitEditCard(columnId, item)}
+            onBlur={() => onCommitEditCard(columnId, item.id)}
             onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
               if (event.key === 'Enter') {
-                onCommitEditCard(columnId, item)
+                onCommitEditCard(columnId, item.id)
               }
 
               if (event.key === 'Escape') {
@@ -104,7 +105,7 @@ export function SortableItemCard({
               type="button"
               className="item-edit-delete-button"
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => onDeleteCard(columnId, item)}
+              onClick={() => onDeleteCard(columnId, item.id)}
             >
               削除
             </button>
@@ -114,9 +115,9 @@ export function SortableItemCard({
         <button
           type="button"
           className="item-card-body"
-          onClick={() => onToggleChecked(columnId, item)}
+          onClick={() => onToggleChecked(item.id)}
         >
-          <p className="item-name">{item}</p>
+          <p className="item-name">{item.name}</p>
         </button>
       )}
     </article>

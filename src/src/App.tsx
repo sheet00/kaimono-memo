@@ -41,9 +41,64 @@ function App() {
         }
         const data = await response.json()
 
-        setColumns(data.lists ?? [])
-        setCheckedItems(data.checkedItems ?? {})
-        setBasketItems(data.basketItems ?? {})
+        const rawLists = data.lists ?? []
+        const rawChecked = data.checkedItems ?? {}
+        const rawBasket = data.basketItems ?? {}
+
+        const itemKeyToUuidMap = new Map<string, string>()
+
+        const migratedLists = rawLists.map((col: any) => {
+          if (!col) return null
+          const items = (col.items ?? [])
+            .map((item: any) => {
+              if (!item) return null
+              if (typeof item === 'string') {
+                const uuid = crypto.randomUUID()
+                const oldKey = `${col.id}::${item}`
+                itemKeyToUuidMap.set(oldKey, uuid)
+                return { id: uuid, name: item }
+              }
+              if (typeof item === 'object' && item.id && item.name) {
+                return { id: String(item.id), name: String(item.name) }
+              }
+              return { id: crypto.randomUUID(), name: String(item) }
+            })
+            .filter(Boolean)
+          return {
+            id: col.id || `list-${Date.now()}`,
+            title: col.title || '無題のリスト',
+            items
+          }
+        }).filter(Boolean)
+
+        const migratedCheckedItems: Record<string, true> = {}
+        const migratedBasketItems: Record<string, true> = {}
+
+        Object.keys(rawChecked).forEach((key) => {
+          if (rawChecked[key]) {
+            if (itemKeyToUuidMap.has(key)) {
+              const newUuid = itemKeyToUuidMap.get(key)!
+              migratedCheckedItems[newUuid] = true
+            } else {
+              migratedCheckedItems[key] = true
+            }
+          }
+        })
+
+        Object.keys(rawBasket).forEach((key) => {
+          if (rawBasket[key]) {
+            if (itemKeyToUuidMap.has(key)) {
+              const newUuid = itemKeyToUuidMap.get(key)!
+              migratedBasketItems[newUuid] = true
+            } else {
+              migratedBasketItems[key] = true
+            }
+          }
+        })
+
+        setColumns(migratedLists)
+        setCheckedItems(migratedCheckedItems)
+        setBasketItems(migratedBasketItems)
         setIsLoaded(true)
       } catch (error) {
         console.error('Failed to fetch app state:', error)
@@ -101,6 +156,16 @@ function App() {
     setCheckedItems,
     setBasketItems,
   })
+
+  const activeItemName = (() => {
+    if (!listBoard.activeItemId) return null
+    for (const col of columns) {
+      if (!col.items) continue
+      const found = col.items.find((item) => item.id === listBoard.activeItemId)
+      if (found) return found.name
+    }
+    return null
+  })()
 
 
 
@@ -225,7 +290,7 @@ function App() {
           <DragOverlay>
             {listBoard.activeItemId ? (
               <article className="item-card item-card-overlay">
-                <p className="item-name">{listBoard.activeItemId}</p>
+                <p className="item-name">{activeItemName}</p>
               </article>
             ) : null}
           </DragOverlay>

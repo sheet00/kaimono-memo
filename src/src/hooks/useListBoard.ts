@@ -9,7 +9,6 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { useState } from "react";
 import type { BoardColumn, CheckedItems } from "../types/board";
-import { getItemKey } from "../utils/getItemKey";
 
 type UseListBoardParams = {
   columns: BoardColumn[];
@@ -60,7 +59,7 @@ export function useListBoard({
   );
 
   const findColumnByItemId = (itemId: string) =>
-    columns.find((column) => column.items.includes(itemId));
+    columns.find((column) => (column.items || []).some((item) => item.id === itemId));
 
   const findColumnByTargetId = (targetId: string | null) => {
     if (!targetId) {
@@ -99,7 +98,7 @@ export function useListBoard({
 
     setColumns((currentColumns) => {
       const sourceColumn = currentColumns.find((column) =>
-        column.items.includes(activeId),
+        column.items.some((item) => item.id === activeId),
       );
       const destinationColumn = currentColumns.find(
         (column) => column.id === overColumn.id,
@@ -109,16 +108,21 @@ export function useListBoard({
         return currentColumns;
       }
 
+      const activeItem = sourceColumn.items.find((item) => item.id === activeId);
+      if (!activeItem) {
+        return currentColumns;
+      }
+
       const sourceItems = sourceColumn.items.filter(
-        (item) => item !== activeId,
+        (item) => item.id !== activeId,
       );
       const destinationItems = [...destinationColumn.items];
       const overIndex =
-        overId && destinationItems.includes(overId)
-          ? destinationItems.indexOf(overId)
+        overId && destinationItems.some((item) => item.id === overId)
+          ? destinationItems.findIndex((item) => item.id === overId)
           : destinationItems.length;
 
-      destinationItems.splice(overIndex, 0, activeId);
+      destinationItems.splice(overIndex, 0, activeItem);
 
       return currentColumns.map((column) => {
         if (column.id === sourceColumn.id) {
@@ -148,12 +152,12 @@ export function useListBoard({
     const overColumn = findColumnByTargetId(overId);
 
     if (activeColumn && overColumn && activeColumn.id === overColumn.id) {
-      const oldIndex = activeColumn.items.indexOf(activeId);
-      const newIndex = overColumn.items.includes(overId)
-        ? overColumn.items.indexOf(overId)
+      const oldIndex = activeColumn.items.findIndex((item) => item.id === activeId);
+      const newIndex = overColumn.items.some((item) => item.id === overId)
+        ? overColumn.items.findIndex((item) => item.id === overId)
         : overColumn.items.length - 1;
 
-      if (oldIndex !== newIndex) {
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
         setColumns((currentColumns) =>
           currentColumns.map((column) =>
             column.id === activeColumn.id
@@ -255,10 +259,15 @@ export function useListBoard({
       return;
     }
 
+    const newItem = {
+      id: crypto.randomUUID(),
+      name: nextCardName,
+    };
+
     setColumns((currentColumns) =>
       currentColumns.map((column) =>
         column.id === columnId
-          ? { ...column, items: [...column.items, nextCardName] }
+          ? { ...column, items: [...column.items, newItem] }
           : column,
       ),
     );
@@ -266,9 +275,9 @@ export function useListBoard({
     setNewCardValue("");
   };
 
-  const startEditCard = (columnId: string, item: string) => {
-    setEditingCardKey(getItemKey(columnId, item));
-    setEditingCardValue(item);
+  const startEditCard = (_columnId: string, itemId: string, currentName: string) => {
+    setEditingCardKey(itemId);
+    setEditingCardValue(currentName);
   };
 
   const cancelEditCard = () => {
@@ -276,15 +285,12 @@ export function useListBoard({
     setEditingCardValue("");
   };
 
-  const commitEditCard = (columnId: string, item: string) => {
+  const commitEditCard = (columnId: string, itemId: string) => {
     const nextItemName = editingCardValue.trim();
-    if (!nextItemName || nextItemName === item) {
+    if (!nextItemName) {
       cancelEditCard();
       return;
     }
-
-    const oldKey = getItemKey(columnId, item);
-    const newKey = getItemKey(columnId, nextItemName);
 
     setColumns((currentColumns) =>
       currentColumns.map((column) =>
@@ -292,30 +298,12 @@ export function useListBoard({
           ? {
               ...column,
               items: column.items.map((currentItem) =>
-                currentItem === item ? nextItemName : currentItem,
+                currentItem.id === itemId ? { ...currentItem, name: nextItemName } : currentItem,
               ),
             }
           : column,
       ),
     );
-    setCheckedItems((current) => {
-      if (!(oldKey in current)) {
-        return current;
-      }
-      const next = { ...current };
-      delete next[oldKey];
-      next[newKey] = true;
-      return next;
-    });
-    setBasketItems((current) => {
-      if (!(oldKey in current)) {
-        return current;
-      }
-      const next = { ...current };
-      delete next[oldKey];
-      next[newKey] = true;
-      return next;
-    });
     cancelEditCard();
   };
 
@@ -334,24 +322,22 @@ export function useListBoard({
       return;
     }
 
+    const itemIds = targetColumn.items.map((item) => item.id);
+
     setColumns((currentColumns) =>
       currentColumns.filter((column) => column.id !== columnId),
     );
     setCheckedItems((current) => {
       const next = { ...current };
-      Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${columnId}::`)) {
-          delete next[key];
-        }
+      itemIds.forEach((id) => {
+        delete next[id];
       });
       return next;
     });
     setBasketItems((current) => {
       const next = { ...current };
-      Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${columnId}::`)) {
-          delete next[key];
-        }
+      itemIds.forEach((id) => {
+        delete next[id];
       });
       return next;
     });
@@ -362,26 +348,25 @@ export function useListBoard({
     }
   };
 
-  const deleteCard = (columnId: string, item: string) => {
-    const itemKey = getItemKey(columnId, item);
+  const deleteCard = (columnId: string, itemId: string) => {
     setColumns((currentColumns) =>
       currentColumns.map((column) =>
         column.id === columnId
           ? {
               ...column,
-              items: column.items.filter((currentItem) => currentItem !== item),
+              items: column.items.filter((currentItem) => currentItem.id !== itemId),
             }
           : column,
       ),
     );
     setCheckedItems((current) => {
       const next = { ...current };
-      delete next[itemKey];
+      delete next[itemId];
       return next;
     });
     setBasketItems((current) => {
       const next = { ...current };
-      delete next[itemKey];
+      delete next[itemId];
       return next;
     });
   };

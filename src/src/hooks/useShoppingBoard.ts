@@ -5,7 +5,6 @@ import type {
   CheckedItems,
   ShoppingEntry,
 } from "../types/board";
-import { getItemKey } from "../utils/getItemKey";
 
 type UseShoppingBoardParams = {
   columns: BoardColumn[];
@@ -38,10 +37,11 @@ export function useShoppingBoard({
     () =>
       columns.flatMap((column) =>
         column.items
-          .filter((item) => checkedItems[getItemKey(column.id, item)])
+          .filter((item) => checkedItems[item.id])
           .map((item) => ({
-            key: getItemKey(column.id, item),
-            item,
+            key: item.id,
+            id: item.id,
+            item: item.name,
             sourceTitle: column.title,
             columnId: column.id,
           })),
@@ -50,44 +50,43 @@ export function useShoppingBoard({
   );
 
   const shoppingItems = selectedItems.filter(
-    (entry) => !basketItems[entry.key],
+    (entry) => !basketItems[entry.id],
   );
   const basketListItems = selectedItems.filter(
-    (entry) => basketItems[entry.key],
+    (entry) => basketItems[entry.id],
   );
 
-  const toggleChecked = (columnId: string, item: string) => {
-    const itemKey = getItemKey(columnId, item);
+  const toggleChecked = (itemId: string) => {
     setCheckedItems((current) => {
-      if (current[itemKey]) {
+      if (current[itemId]) {
         setBasketItems((basketCurrent) => {
           const nextBasket = { ...basketCurrent };
-          delete nextBasket[itemKey];
+          delete nextBasket[itemId];
           return nextBasket;
         });
         const next = { ...current };
-        delete next[itemKey];
+        delete next[itemId];
         return next;
       }
 
       return {
         ...current,
-        [itemKey]: true,
+        [itemId]: true,
       };
     });
   };
 
-  const moveToBasket = (itemKey: string) => {
+  const moveToBasket = (itemId: string) => {
     setBasketItems((current) => ({
       ...current,
-      [itemKey]: true,
+      [itemId]: true,
     }));
   };
 
-  const moveBackToShopping = (itemKey: string) => {
+  const moveBackToShopping = (itemId: string) => {
     setBasketItems((current) => {
       const next = { ...current };
-      delete next[itemKey];
+      delete next[itemId];
       return next;
     });
   };

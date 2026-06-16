@@ -363,10 +363,6 @@ export function useListBoard({
   };
 
   const deleteCard = (columnId: string, item: string) => {
-    if (!window.confirm(`「${item}」を削除してもいいですか？`)) {
-      return;
-    }
-
     const itemKey = getItemKey(columnId, item);
     setColumns((currentColumns) =>
       currentColumns.map((column) =>

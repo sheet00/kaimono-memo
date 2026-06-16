@@ -28,19 +28,19 @@ type BoardColumn = {
 
 const initialBoardColumns: BoardColumn[] = [
   {
-    id: 'template',
-    title: 'テンプレート',
-    items: ['牛乳', '卵', '食パン', '納豆', 'マヨネーズ'],
-  },
-  {
-    id: 'today',
-    title: '今日の買い物',
+    id: 'fridge',
+    title: '冷蔵庫',
     items: ['鶏もも肉', 'ヨーグルト', 'トイレットペーパー', 'バナナ'],
   },
   {
-    id: 'basket',
-    title: 'カゴに入れた',
+    id: 'daily-necessities',
+    title: '生活品',
     items: ['にんじん', '玉ねぎ', '豆腐'],
+  },
+  {
+    id: 'occasional',
+    title: 'たまに買う',
+    items: ['ラップ', '乾電池', 'スポンジ'],
   },
 ]
 
@@ -94,6 +94,7 @@ function BoardColumnSection({
   onEditingTitleChange,
   onCommitTitle,
   onCancelTitleEdit,
+  onDeleteColumn,
 }: {
   column: BoardColumn
   isOver: boolean
@@ -103,6 +104,7 @@ function BoardColumnSection({
   onEditingTitleChange: (value: string) => void
   onCommitTitle: (columnId: string) => void
   onCancelTitleEdit: () => void
+  onDeleteColumn: (columnId: string) => void
 }) {
   const { setNodeRef } = useDroppable({
     id: column.id,
@@ -118,33 +120,47 @@ function BoardColumnSection({
       className={`board-column ${isOver ? 'is-drop-target' : ''}`}
     >
       <header className="column-header">
-        {isEditingTitle ? (
-          <input
-            className="column-title-input"
-            value={editingTitleValue}
-            onChange={(event) => onEditingTitleChange(event.target.value)}
-            onBlur={() => onCommitTitle(column.id)}
-            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-              if (event.key === 'Enter') {
-                onCommitTitle(column.id)
-              }
+        <div className="column-title-row">
+          {isEditingTitle ? (
+            <input
+              className="column-title-input"
+              value={editingTitleValue}
+              onChange={(event) => onEditingTitleChange(event.target.value)}
+              onBlur={() => onCommitTitle(column.id)}
+              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === 'Enter') {
+                  onCommitTitle(column.id)
+                }
 
-              if (event.key === 'Escape') {
-                onCancelTitleEdit()
-              }
-            }}
-            autoFocus
-            onFocus={(event) => event.currentTarget.select()}
-          />
-        ) : (
+                if (event.key === 'Escape') {
+                  onCancelTitleEdit()
+                }
+              }}
+              autoFocus
+              onFocus={(event) => event.currentTarget.select()}
+            />
+          ) : (
+            <button
+              type="button"
+              className="column-title-button"
+              onClick={() => onStartTitleEdit(column.id)}
+            >
+              {column.title}
+            </button>
+          )}
+
           <button
             type="button"
-            className="column-title-button"
-            onClick={() => onStartTitleEdit(column.id)}
+            className="column-delete-button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onDeleteColumn(column.id)
+            }}
+            aria-label={`${column.title}を削除`}
           >
-            {column.title}
+            ×
           </button>
-        )}
+        </div>
       </header>
 
       <SortableContext
@@ -322,8 +338,56 @@ function App() {
     setEditingTitleValue('')
   }
 
+  const addList = () => {
+    const nextIndex = columns.length + 1
+    const newColumnId = `list-${Date.now()}`
+    const newTitle = `新しいリスト ${nextIndex}`
+
+    setColumns((currentColumns) => [
+      ...currentColumns,
+      {
+        id: newColumnId,
+        title: newTitle,
+        items: [],
+      },
+    ])
+    setEditingColumnId(newColumnId)
+    setEditingTitleValue(newTitle)
+  }
+
+  const deleteColumn = (columnId: string) => {
+    const targetColumn = columns.find((column) => column.id === columnId)
+    if (!targetColumn) {
+      return
+    }
+
+    if (
+      targetColumn.items.length > 0 &&
+      !window.confirm(
+        `「${targetColumn.title}」にはカードが残っています。削除してもいいですか？`,
+      )
+    ) {
+      return
+    }
+
+    setColumns((currentColumns) =>
+      currentColumns.filter((column) => column.id !== columnId),
+    )
+
+    if (editingColumnId === columnId) {
+      setEditingColumnId(null)
+      setEditingTitleValue('')
+    }
+  }
+
   return (
     <main className="board-page">
+      <div className="board-toolbar">
+        <button type="button" className="add-list-button" onClick={addList}>
+          リスト追加
+        </button>
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -347,6 +411,7 @@ function App() {
               onEditingTitleChange={setEditingTitleValue}
               onCommitTitle={commitTitleEdit}
               onCancelTitleEdit={cancelTitleEdit}
+              onDeleteColumn={deleteColumn}
             />
           ))}
         </section>

@@ -1,22 +1,58 @@
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BoardColumnSection } from './components/BoardColumnSection'
 import { ShoppingBoard } from './components/ShoppingBoard'
-import { initialBoardColumns } from './data/initialBoardColumns'
 import { useListBoard } from './hooks/useListBoard'
 import { useShoppingBoard } from './hooks/useShoppingBoard'
 import './styles/board.css'
-import type { BasketItems, CheckedItems, PageMode } from './types/board'
+import type { BasketItems, CheckedItems, PageMode, BoardColumn } from './types/board'
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:8787' : ''
 
 function App() {
-  const [columns, setColumns] = useState(initialBoardColumns)
+  const [columns, setColumns] = useState<BoardColumn[]>([])
   const [pageMode, setPageMode] = useState<PageMode>('lists')
   const [checkedItems, setCheckedItems] = useState<CheckedItems>({})
   const [basketItems, setBasketItems] = useState<BasketItems>({})
   const [healthStatus, setHealthStatus] = useState('未確認')
   const [isCheckingHealth, setIsCheckingHealth] = useState(false)
+
+  useEffect(() => {
+    const loadAppState = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/app-state`)
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        const data = await response.json()
+
+        const mappedColumns: BoardColumn[] = data.lists.map((list: any) => ({
+          id: list.id,
+          title: list.name,
+          items: list.items.map((item: any) => item.name),
+        }))
+        setColumns(mappedColumns)
+
+        const mappedChecked: CheckedItems = {}
+        const allSelected = [...data.shoppingItems, ...data.basketItems]
+        for (const item of allSelected) {
+          mappedChecked[`${item.source_list_id}::${item.name}`] = true
+        }
+        setCheckedItems(mappedChecked)
+
+        const mappedBasket: BasketItems = {}
+        for (const item of data.basketItems) {
+          mappedBasket[`${item.source_list_id}::${item.name}`] = true
+        }
+        setBasketItems(mappedBasket)
+      } catch (error) {
+        console.error('Failed to fetch app state:', error)
+      }
+    }
+
+    loadAppState()
+  }, [])
+
 
   const listBoard = useListBoard({
     columns,

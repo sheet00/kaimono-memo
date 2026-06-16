@@ -16,6 +16,7 @@ function App() {
   const [basketItems, setBasketItems] = useState<BasketItems>({})
   const [healthStatus, setHealthStatus] = useState('未確認')
   const [isCheckingHealth, setIsCheckingHealth] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
     const loadAppState = async () => {
@@ -26,25 +27,10 @@ function App() {
         }
         const data = await response.json()
 
-        const mappedColumns: BoardColumn[] = data.lists.map((list: any) => ({
-          id: list.id,
-          title: list.name,
-          items: list.items.map((item: any) => item.name),
-        }))
-        setColumns(mappedColumns)
-
-        const mappedChecked: CheckedItems = {}
-        const allSelected = [...data.shoppingItems, ...data.basketItems]
-        for (const item of allSelected) {
-          mappedChecked[`${item.source_list_id}::${item.name}`] = true
-        }
-        setCheckedItems(mappedChecked)
-
-        const mappedBasket: BasketItems = {}
-        for (const item of data.basketItems) {
-          mappedBasket[`${item.source_list_id}::${item.name}`] = true
-        }
-        setBasketItems(mappedBasket)
+        setColumns(data.lists ?? [])
+        setCheckedItems(data.checkedItems ?? {})
+        setBasketItems(data.basketItems ?? {})
+        setIsLoaded(true)
       } catch (error) {
         console.error('Failed to fetch app state:', error)
       }
@@ -52,6 +38,38 @@ function App() {
 
     loadAppState()
   }, [])
+
+  useEffect(() => {
+    if (!isLoaded) return
+
+    const saveAppState = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/app-state`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lists: columns.map((col) => ({
+              id: col.id,
+              title: col.title,
+              items: col.items,
+            })),
+            checkedItems,
+            basketItems,
+          }),
+        })
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+      } catch (error) {
+        console.error('Failed to save app state:', error)
+      }
+    }
+
+    saveAppState()
+  }, [columns, checkedItems, basketItems, isLoaded])
+
 
 
   const listBoard = useListBoard({

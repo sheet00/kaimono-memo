@@ -1,28 +1,4 @@
--- seed.sql
--- 初期データの投入
-
--- 1. lists の投入
-INSERT OR IGNORE INTO lists (id, name, sort_order) VALUES
-  ('list-refrigerator', '冷蔵庫', 1),
-  ('list-daily', '生活品', 2),
-  ('list-occasional', 'たまに買う', 3);
-
--- 2. list_items の投入
-INSERT OR IGNORE INTO list_items (id, list_id, name, sort_order) VALUES
-  -- 冷蔵庫
-  ('item-milk', 'list-refrigerator', '牛乳', 1),
-  ('item-egg', 'list-refrigerator', '卵', 2),
-  ('item-natto', 'list-refrigerator', '納豆', 3),
-  ('item-tofu', 'list-refrigerator', '豆腐', 4),
-  -- 生活品
-  ('item-toilet-paper', 'list-daily', 'トイレットペーパー', 1),
-  ('item-detergent', 'list-daily', '洗濯洗剤', 2),
-  ('item-tissue', 'list-daily', 'ティッシュ', 3),
-  -- たまに買う
-  ('item-light-bulb', 'list-occasional', '電球', 1),
-  ('item-battery', 'list-occasional', '乾電池', 2);
-
--- 3. shopping_items の投入 (動作確認用)
-INSERT OR IGNORE INTO shopping_items (id, source_list_id, source_item_id, name, status, sort_order) VALUES
-  ('shop-milk', 'list-refrigerator', 'item-milk', '牛乳', 'shopping', 1),
-  ('shop-toilet-paper', 'list-daily', 'item-toilet-paper', 'トイレットペーパー', 'basket', 2);
+INSERT OR REPLACE INTO app_state (key, value) VALUES (
+  'main',
+  '{"lists":[{"id":"fridge","title":"冷蔵庫","items":["ヨーグルト","麦茶","のむヨーグルト","なす","おみそ汁","玉ねぎ","スープ","ジャム","パン","マーガリン","ツナ缶","オリーブオイル","みそ","にんにく","牛乳","たまご","キャベツ","マヨネーズ","キムチ","豆腐","卵","納豆","にんじん","ドレッシング","チーズ","鮭","きゅうり","ニラ"]},{"id":"daily-necessities","title":"生活品","items":["化粧水","お風呂洗剤","ゴミ袋(30L大)","犬おやつ","洗濯洗剤","リンス","アルミホイル","お茶パック","にんにくチューブ","せっけん","ラップ","キッチンペーパー","単2電池","シャンプー","玄関芳香剤","歯磨き粉","ビニール袋","トイレットペーパー","重曹","柔軟剤","洗顔","流し漂白","漂白剤"]},{"id":"occasional","title":"たまに買う","items":["コーヒーフィルター","CR2032","醤油","かつおぶし、あげだま","歯磨き粉","めんつゆ","レモン果汁","山椒","砂糖","クッキングシート","ココナツミルク","はちみつ","お茶","お好み焼きソース","ケチャップ","ミロ","ハイター","クイックルワイパー","コーヒー","ピザ用チーズ","こめ","のどあめ","タバスコ","白ワイン、赤ワイン","爪楊枝","ロキソニン","どら焼き"]}],"checkedItems":{"fridge::牛乳":true,"daily-necessities::トイレットペーパー":true},"basketItems":{"daily-necessities::トイレットペーパー":true}}'
+);

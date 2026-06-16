@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
-import { buildAppState } from '../builders/build-app-state'
-import { fetchAppStateRows } from '../repositories/app-state-repository'
+import { fetchAppStateJson, saveAppStateJson } from '../repositories/app-state-repository'
 import type { WorkerEnv } from '../types/env'
 
 export const appStateRoute = new Hono<WorkerEnv>()
@@ -17,6 +16,36 @@ appStateRoute.get('/app-state', async (c) => {
     )
   }
 
-  const { listRows, shoppingRows } = await fetchAppStateRows(db)
-  return c.json(buildAppState(listRows, shoppingRows))
+  const json = await fetchAppStateJson(db)
+  if (!json) {
+    return c.json({
+      lists: [],
+      checkedItems: {},
+      basketItems: {}
+    })
+  }
+
+  return c.json(JSON.parse(json))
+})
+
+appStateRoute.post('/app-state', async (c) => {
+  const db = c.env.DB
+
+  if (!db) {
+    return c.json(
+      {
+        error: 'D1 database binding is not configured.',
+      },
+      503,
+    )
+  }
+
+  try {
+    const body = await c.req.json()
+    await saveAppStateJson(db, JSON.stringify(body))
+    return c.json({ success: true })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return c.json({ error: message }, 500)
+  }
 })

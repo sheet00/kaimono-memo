@@ -379,6 +379,16 @@ export function useListBoard({
     }
   };
 
+  const moveColumn = (columnId: string, direction: 'up' | 'down') => {
+    const index = columns.findIndex((col) => col.id === columnId);
+    if (index === -1) return;
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= columns.length) return;
+
+    setColumns((currentColumns) => arrayMove(currentColumns, index, newIndex));
+  };
+
   const deleteCard = (columnId: string, itemId: string) => {
     setColumns((currentColumns) =>
       currentColumns.map((column) =>
@@ -435,6 +445,7 @@ export function useListBoard({
     cancelEditCard,
     commitEditCard,
     deleteColumn,
+    moveColumn,
     deleteCard,
   };
 }

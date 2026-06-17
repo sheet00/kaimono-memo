@@ -19,6 +19,7 @@ type BoardColumnSectionProps = {
   onCommitTitle: (columnId: string) => void
   onCancelTitleEdit: () => void
   onDeleteColumn: (columnId: string) => void
+  onMoveColumn: (columnId: string, direction: 'up' | 'down') => void
   onStartAddCard: (columnId: string) => void
   onNewCardValueChange: (value: string) => void
   onAddCard: (columnId: string) => void
@@ -46,6 +47,7 @@ export function BoardColumnSection({
   onCommitTitle,
   onCancelTitleEdit,
   onDeleteColumn,
+  onMoveColumn,
   onStartAddCard,
   onNewCardValueChange,
   onAddCard,
@@ -95,6 +97,30 @@ export function BoardColumnSection({
           >
             ☰
           </button>
+          <div className="column-move-buttons">
+            <button
+              type="button"
+              className="column-move-button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onMoveColumn(column.id, 'up')
+              }}
+              aria-label="上へ移動"
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              className="column-move-button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onMoveColumn(column.id, 'down')
+              }}
+              aria-label="下へ移動"
+            >
+              ▼
+            </button>
+          </div>
           {isEditingTitle ? (
             <input
               className="column-title-input"

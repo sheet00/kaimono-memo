@@ -222,8 +222,7 @@ function App() {
         </div>
         <button
           type="button"
-          className="top-nav-button"
-          style={{ marginLeft: 'auto' }}
+          className="top-nav-button export-button"
           onClick={handleExport}
         >
           エクスポート
@@ -270,6 +269,7 @@ function App() {
                   onCommitTitle={listBoard.commitTitleEdit}
                   onCancelTitleEdit={listBoard.cancelTitleEdit}
                   onDeleteColumn={listBoard.deleteColumn}
+                  onMoveColumn={listBoard.moveColumn}
                   onStartAddCard={listBoard.startAddCard}
                   onNewCardValueChange={listBoard.setNewCardValue}
                   onAddCard={listBoard.addCard}

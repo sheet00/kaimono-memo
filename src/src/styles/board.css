@@ -1,4 +1,6 @@
 .board-page {
+  --page-inline-padding: 20px;
+  --panel-inline-padding: 0px;
   min-height: 100svh;
   padding: 20px;
   box-sizing: border-box;
@@ -130,7 +132,9 @@
   align-items: start;
   justify-content: start;
   overflow-x: auto;
+  padding-inline: var(--panel-inline-padding);
   padding-bottom: 8px;
+  scroll-padding-inline: var(--panel-inline-padding);
 }
 
 .add-list-column {
@@ -440,6 +444,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  padding-inline: var(--panel-inline-padding);
 }
 
 .shopping-page-board {
@@ -526,6 +531,10 @@
 }
 
 @media (max-width: 980px) {
+  .board-page {
+    --panel-inline-padding: 24px;
+  }
+
   .board {
     grid-auto-columns: minmax(15rem, 16.5rem);
   }
@@ -548,6 +557,8 @@
   }
 
   .board-page {
+    --page-inline-padding: 14px;
+    --panel-inline-padding: 24px;
     padding: 14px;
   }
 

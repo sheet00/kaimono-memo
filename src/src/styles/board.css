@@ -558,8 +558,20 @@
 
   .board-page {
     --page-inline-padding: 14px;
-    --panel-inline-padding: 24px;
-    padding: 14px;
+    --panel-inline-padding: 36px;
+    padding: 14px 24px 14px 0px;
+  }
+
+  .board {
+    padding-left: 0;
+    padding-right: var(--panel-inline-padding);
+    scroll-padding-left: 0;
+    scroll-padding-right: var(--panel-inline-padding);
+  }
+
+  .shopping-page {
+    padding-left: 0;
+    padding-right: var(--panel-inline-padding);
   }
 
   .board-toolbar {

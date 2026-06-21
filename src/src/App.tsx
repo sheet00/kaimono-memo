@@ -201,6 +201,15 @@ function App() {
     URL.revokeObjectURL(url)
   }
 
+  if (!isLoaded) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner" />
+        <p className="loading-text">データを読み込み中...</p>
+      </div>
+    )
+  }
+
   return (
     <main className="board-page">
       <div className="board-toolbar">
